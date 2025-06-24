@@ -3,27 +3,28 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
+	"os"
 
 	"github.com/renja-g/riotgo/clients"
 )
 
 func main() {
 
-	riotClient := clients.NewRiotClient("XXX")
+	riotClient := clients.NewRiotClient(os.Getenv("RIOT_API_KEY"))
 
-	acc, err := riotClient.GetAccountV1ByRiotID(
-		context.Background(),
+	// Will use default context.Background()
+	acc, _ := riotClient.GetAccountV1ByRiotID(
 		clients.Europe,
 		"Ayato",
 		"11235",
 	)
-	if err != nil {
-		log.Fatalf("Error getting account: %v", err)
-	}
+	fmt.Printf("%s#%s\n", acc.GameName, acc.TagLine)
 
-	fmt.Println(acc.GameName)
-	fmt.Println(acc.TagLine)
-	fmt.Println(acc.PUUID)
-
+	// WithContext custom context
+	acc, _ = riotClient.WithContext(context.Background()).GetAccountV1ByRiotID(
+		clients.Europe,
+		"Ayato",
+		"11235",
+	)
+	fmt.Printf("%s#%s\n", acc.GameName, acc.TagLine)
 }

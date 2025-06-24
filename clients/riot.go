@@ -42,6 +42,7 @@ const (
 
 type RiotAPIClient struct {
 	*BaseClient
+	ctx context.Context
 }
 
 func NewRiotClient(apiKey string, opts ...Option) *RiotAPIClient {
@@ -58,85 +59,17 @@ func (rc *RiotAPIClient) urlFor(r Region, path string) string {
 	return fmt.Sprintf(rc.BaseURL, r) + path
 }
 
-// ----- Endpoints -----
-
-// Account-V1
-
-func (rc *RiotAPIClient) GetAccountV1ByPUUID(
-	ctx context.Context,
-	r Region,
-	puuid string,
-) (*riotapi.AccountV1Account, error) {
-	return invokeJSON[riotapi.AccountV1Account](
-		rc,
-		ctx,
-		r,
-		http.MethodGet,
-		"/riot/account/v1/accounts/by-puuid/{puuid}",
-		map[string]string{"puuid": puuid},
-		nil,
-		nil,
-		nil,
-	)
+func (rc *RiotAPIClient) WithContext(ctx context.Context) *RiotAPIClient {
+	clone := *rc
+	clone.ctx = ctx
+	return &clone
 }
 
-func (rc *RiotAPIClient) GetAccountV1ByRiotID(
-	ctx context.Context,
-	r Region,
-	gameName string,
-	tagLine string,
-) (*riotapi.AccountV1Account, error) {
-	return invokeJSON[riotapi.AccountV1Account](
-		rc,
-		ctx,
-		r,
-		http.MethodGet,
-		"/riot/account/v1/accounts/by-riot-id/{game_name}/{tag_line}",
-		map[string]string{
-			"game_name": gameName,
-			"tag_line":  tagLine,
-		},
-		nil,
-		nil,
-		nil,
-	)
-}
-
-func (rc *RiotAPIClient) GetAccountV1Me(
-	ctx context.Context,
-	r Region,
-	authorization string,
-) (*riotapi.AccountV1Account, error) {
-	return invokeJSON[riotapi.AccountV1Account](
-		rc,
-		ctx,
-		r,
-		http.MethodGet,
-		"/riot/account/v1/accounts/me",
-		nil,
-		nil,
-		map[string]string{"Authorization": authorization},
-		nil,
-	)
-}
-
-func (rc *RiotAPIClient) GetAccountV1ActiveShardByPUUID(
-	ctx context.Context,
-	r Region,
-	puuid string,
-	game string,
-) (*riotapi.AccountV1ActiveShard, error) {
-	return invokeJSON[riotapi.AccountV1ActiveShard](
-		rc,
-		ctx,
-		r,
-		http.MethodGet,
-		"/riot/account/v1/active-shards/by-game/{game}/by-puuid/{puuid}",
-		map[string]string{"puuid": puuid, "game": game},
-		nil,
-		nil,
-		nil,
-	)
+func (rc *RiotAPIClient) getContext() context.Context {
+	if rc.ctx != nil {
+		return rc.ctx
+	}
+	return context.Background()
 }
 
 func expandPath(template string, params map[string]string) string {
@@ -185,4 +118,81 @@ func invokeJSON[T any](
 		return nil, err
 	}
 	return &v, nil
+}
+
+// ----- Endpoints -----
+
+// Account-V1
+
+func (rc *RiotAPIClient) GetAccountV1ByPUUID(
+	r Region,
+	puuid string,
+) (*riotapi.AccountV1Account, error) {
+	return invokeJSON[riotapi.AccountV1Account](
+		rc,
+		rc.getContext(),
+		r,
+		http.MethodGet,
+		"/riot/account/v1/accounts/by-puuid/{puuid}",
+		map[string]string{"puuid": puuid},
+		nil,
+		nil,
+		nil,
+	)
+}
+
+func (rc *RiotAPIClient) GetAccountV1ByRiotID(
+	r Region,
+	gameName string,
+	tagLine string,
+) (*riotapi.AccountV1Account, error) {
+	return invokeJSON[riotapi.AccountV1Account](
+		rc,
+		rc.getContext(),
+		r,
+		http.MethodGet,
+		"/riot/account/v1/accounts/by-riot-id/{game_name}/{tag_line}",
+		map[string]string{
+			"game_name": gameName,
+			"tag_line":  tagLine,
+		},
+		nil,
+		nil,
+		nil,
+	)
+}
+
+func (rc *RiotAPIClient) GetAccountV1Me(
+	r Region,
+	authorization string,
+) (*riotapi.AccountV1Account, error) {
+	return invokeJSON[riotapi.AccountV1Account](
+		rc,
+		rc.getContext(),
+		r,
+		http.MethodGet,
+		"/riot/account/v1/accounts/me",
+		nil,
+		nil,
+		map[string]string{"Authorization": authorization},
+		nil,
+	)
+}
+
+func (rc *RiotAPIClient) GetAccountV1ActiveShardByPUUID(
+	r Region,
+	puuid string,
+	game string,
+) (*riotapi.AccountV1ActiveShard, error) {
+	return invokeJSON[riotapi.AccountV1ActiveShard](
+		rc,
+		rc.getContext(),
+		r,
+		http.MethodGet,
+		"/riot/account/v1/active-shards/by-game/{game}/by-puuid/{puuid}",
+		map[string]string{"puuid": puuid, "game": game},
+		nil,
+		nil,
+		nil,
+	)
 }
