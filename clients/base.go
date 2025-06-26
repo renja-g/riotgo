@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/renja-g/riotgo/middleware"
 )
 
 type BaseClient struct {
@@ -15,6 +17,7 @@ type BaseClient struct {
 	DefaultParams      map[string]string
 	DefaultQueryParams map[string]string
 	HTTPClient         *http.Client
+	middleware         []middleware.Middleware
 }
 
 func NewBaseClient(baseURL string, opts ...Option) *BaseClient {
@@ -45,6 +48,10 @@ func WithDefaultHeader(k, v string) Option {
 
 func WithDefaultQuery(k, v string) Option {
 	return func(c *BaseClient) { c.DefaultQueryParams[k] = v }
+}
+
+func WithMiddleware(m middleware.Middleware) Option {
+	return func(c *BaseClient) { c.middleware = append(c.middleware, m) }
 }
 
 func (c *BaseClient) Invoke(
@@ -87,5 +94,16 @@ func (c *BaseClient) Invoke(
 		req.Header.Set(k, v)
 	}
 
-	return c.HTTPClient.Do(req)
+	client := *c.HTTPClient
+	transport := client.Transport
+	if transport == nil {
+		transport = http.DefaultTransport
+	}
+	// Chain the middleware in reverse order.
+	for i := len(c.middleware) - 1; i >= 0; i-- {
+		transport = c.middleware[i](transport)
+	}
+	client.Transport = transport
+
+	return client.Do(req)
 }
