@@ -13,5 +13,3 @@ type AccountV1ActiveShard struct {
 	Game        string `json:"game"`
 	ActiveShard string `json:"activeShard"`
 }
-
-//
